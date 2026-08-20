@@ -7,7 +7,7 @@ export DEBIAN_FRONTEND=noninteractive
 
 echo "=== [0] init: $(date -u) ==="
 
-cd /workspace
+cd /root
 if [ ! -d camscanner/.git ]; then
   git clone -q --depth 1 https://github.com/$GITHUB_REPO.git camscanner
 fi
