@@ -8,9 +8,37 @@ import tensorflow as tf
 from tensorflow import keras
 from PIL import Image
 
+import cv2
+
+from common import render_doc_page
+
 IMG_SIZE = 224
 AUTOTUNE = tf.data.AUTOTUNE
 CLASSES = ["letter", "form", "email", "handwritten", "advertisement", "invoice", "memo", "resume"]
+
+
+def _synthetic_page(cls_idx, seed):
+    rng = random.Random(seed * 7 + cls_idx)
+    img = render_doc_page(IMG_SIZE, seed=seed)
+    img = np.asarray(img, dtype=np.float32)
+    hue = (cls_idx * 37) % 256
+    tint = np.array([[(hue, 160, 90)] * IMG_SIZE for _ in range(IMG_SIZE)], dtype=np.float32)
+    img = cv2.cvtColor(img.astype(np.uint8), cv2.COLOR_RGB2HSV)
+    img[..., 0] = (img[..., 0] + hue) % 180
+    img = cv2.cvtColor(img.astype(np.uint8), cv2.COLOR_HSV2RGB)
+    for _ in range(3 + cls_idx % 4):
+        x, y = rng.randint(10, IMG_SIZE - 40), rng.randint(10, IMG_SIZE - 40)
+        w, h = rng.randint(20, 120), rng.randint(4, 14)
+        cv2.rectangle(img, (x, y), (x + w, y + h), (cls_idx * 20 + 30, cls_idx * 15 + 40, 200 - cls_idx * 10), -1)
+    return img
+
+
+def synthetic_cls_items(per_class=200):
+    items = []
+    for c, cls in enumerate(CLASSES):
+        for i in range(per_class):
+            items.append((None, cls, c * per_class + i))
+    return items
 
 
 def build_model(num_classes):
@@ -27,23 +55,28 @@ def build_model(num_classes):
 def find_samples(data_dir, per_class=200):
     root = os.path.join(data_dir, "rvl_classes")
     items = []
-    for cls in CLASSES:
+    for c, cls in enumerate(CLASSES):
         files = sorted(glob.glob(os.path.join(root, cls, "*.tif")))
         random.seed(42)
         random.shuffle(files)
-        items.extend((f, cls) for f in files[:per_class])
+        items.extend((f, cls, c * per_class + i) for i, f in enumerate(files[:per_class]))
+    if not items:
+        print("[cls] no RVL-CDIP data found -> using synthetic document pages")
+        items = synthetic_cls_items(per_class=per_class)
     return items
 
 
-def load_rgb(path):
+def load_rgb(path, cls_idx, synth_seed=None):
+    if path is None:
+        return _synthetic_page(cls_idx, synth_seed) / 255.0
     with Image.open(path) as im:
         im = im.convert("RGB").resize((IMG_SIZE, IMG_SIZE))
         return np.asarray(im, dtype=np.float32) / 255.0
 
 
 def gen(items):
-    for path, cls in items:
-        yield load_rgb(path), CLASSES.index(cls)
+    for path, cls, seed in items:
+        yield load_rgb(path, CLASSES.index(cls), seed), CLASSES.index(cls)
 
 
 def main():

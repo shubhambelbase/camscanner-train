@@ -1,0 +1,13 @@
+{
+  "id": "shuxorosan/camscanner-train",
+  "title": "CamScanner model training",
+  "code_file": "notebook.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": false,
+  "enable_gpu": true,
+  "enable_internet": true,
+  "competition_sources": [],
+  "dataset_sources": [],
+  "kernel_sources": []
+}

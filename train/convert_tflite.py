@@ -39,10 +39,10 @@ def rep_enhance():
 
 def rep_cls(data_dir):
     import cv2
-    from cls_train import CLASSES, IMG_SIZE as S
+    from cls_train import CLASSES, IMG_SIZE as S, _synthetic_page
     root = os.path.join(data_dir, "rvl_classes")
     count = 0
-    for cls in CLASSES:
+    for c, cls in enumerate(CLASSES):
         for f in sorted(glob.glob(os.path.join(root, cls, "*.tif")))[:4]:
             im = cv2.imread(f)
             if im is None:
@@ -53,6 +53,9 @@ def rep_cls(data_dir):
             count += 1
         if count >= 20:
             break
+    if count == 0:
+        for i in range(20):
+            yield [_synthetic_page(i % len(CLASSES), i).astype(np.float32) / 255.0]
 
 
 def convert(name, saved_dir, out_dir, rep_fn):
