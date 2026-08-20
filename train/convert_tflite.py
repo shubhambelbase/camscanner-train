@@ -13,6 +13,7 @@ IMG_SIZE = 256
 def rep_seg(data_dir):
     quads = sorted(glob.glob(os.path.join(data_dir, "midv500", "**", "*_quad.json"), recursive=True))
     import cv2
+    from common import synthetic_doc_pair
     from seg_train import IMG_SIZE as S
     count = 0
     for qp in quads[:40]:
@@ -28,6 +29,10 @@ def rep_seg(data_dir):
         count += 1
         if count >= 20:
             break
+    if count == 0:
+        for i in range(20):
+            im, _mask, _ = synthetic_doc_pair(S, seed=i)
+            yield [im.astype(np.float32) / 255.0]
 
 
 def rep_enhance():

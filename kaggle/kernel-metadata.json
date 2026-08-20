@@ -1,5 +1,5 @@
 {
-  "id": "shuxorosan/camscanner-train",
+  "id": "shuxorosan/camscanner-model-training",
   "title": "CamScanner model training",
   "code_file": "notebook.ipynb",
   "language": "python",

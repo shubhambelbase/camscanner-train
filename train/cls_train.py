@@ -20,16 +20,17 @@ CLASSES = ["letter", "form", "email", "handwritten", "advertisement", "invoice",
 def _synthetic_page(cls_idx, seed):
     rng = random.Random(seed * 7 + cls_idx)
     img = render_doc_page(IMG_SIZE, seed=seed)
-    img = np.asarray(img, dtype=np.float32)
-    hue = (cls_idx * 37) % 256
-    tint = np.array([[(hue, 160, 90)] * IMG_SIZE for _ in range(IMG_SIZE)], dtype=np.float32)
-    img = cv2.cvtColor(img.astype(np.uint8), cv2.COLOR_RGB2HSV)
-    img[..., 0] = (img[..., 0] + hue) % 180
-    img = cv2.cvtColor(img.astype(np.uint8), cv2.COLOR_HSV2RGB)
+    img = np.asarray(img, dtype=np.uint8)
+    bg = np.full_like(img, 255)
+    bg[..., 0] = int((cls_idx * 23) % 60 + 180)
+    bg[..., 1] = int((cls_idx * 31) % 50 + 190)
+    bg[..., 2] = int((cls_idx * 17) % 45 + 200)
+    img = cv2.addWeighted(bg, 0.55, img, 0.45, 0)
+    cv2.rectangle(img, (0, 0), (IMG_SIZE, 26), ((cls_idx * 40) % 255, (cls_idx * 70 + 60) % 255, (cls_idx * 25 + 90) % 255), -1)
     for _ in range(3 + cls_idx % 4):
         x, y = rng.randint(10, IMG_SIZE - 40), rng.randint(10, IMG_SIZE - 40)
         w, h = rng.randint(20, 120), rng.randint(4, 14)
-        cv2.rectangle(img, (x, y), (x + w, y + h), (cls_idx * 20 + 30, cls_idx * 15 + 40, 200 - cls_idx * 10), -1)
+        cv2.rectangle(img, (x, y), (x + w, y + h), ((cls_idx * 20 + 30) % 255, (cls_idx * 15 + 40) % 255, (200 - cls_idx * 10) % 255), -1)
     return img
 
 
@@ -83,7 +84,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--data", default="/data")
     ap.add_argument("--out", default="/out")
-    ap.add_argument("--epochs", type=int, default=8)
+    ap.add_argument("--epochs", type=int, default=10)
     ap.add_argument("--batch-size", type=int, default=32)
     args = ap.parse_args()
 
@@ -125,7 +126,7 @@ def main():
     ]
     model.fit(train_ds, validation_data=val_ds, epochs=args.epochs, callbacks=callbacks)
 
-    model.get_layer("MobileNetV3Small").trainable = True
+    model.get_layer(model.layers[0].name).trainable = True
     model.compile(
         optimizer=keras.optimizers.Adam(1e-5),
         loss=keras.losses.SparseCategoricalCrossentropy(),

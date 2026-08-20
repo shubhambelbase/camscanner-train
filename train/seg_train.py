@@ -20,7 +20,7 @@ def build_model():
         input_shape=(IMG_SIZE, IMG_SIZE, 3), include_top=False, weights="imagenet"
     )
     base.trainable = True
-    x = base.get_layer("block_16_add").output
+    x = base.get_layer("block_12_add").output
     for filters in (256, 128, 64, 32):
         x = keras.layers.Conv2D(filters, 3, padding="same", activation="relu")(x)
         x = keras.layers.BatchNormalization()(x)
